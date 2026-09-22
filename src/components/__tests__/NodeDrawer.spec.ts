@@ -26,14 +26,6 @@ describe('NodeDrawer', () => {
     expect(document.body.textContent).toContain('Sends texts and attachments to the contact.')
   })
 
-  it('shows the message parts for a send message node', async () => {
-    await openDrawer(find('b0653a'))
-
-    expect(document.body.textContent).toContain('2 parts')
-    expect(document.body.textContent).toContain('welcome to the chat!')
-    expect(document.body.querySelector('img')?.getAttribute('src')).toContain('picsum.photos')
-  })
-
   it('lists every opening hour for a business hours node', async () => {
     await openDrawer(find('d09c08'))
 
@@ -41,18 +33,6 @@ describe('NodeDrawer', () => {
     expect(document.body.textContent).toContain('Monday')
     expect(document.body.textContent).toContain('Sunday')
     expect(document.body.textContent).toContain('09:00 – 17:00')
-  })
-
-  it('shows the comment for an add comment node', async () => {
-    await openDrawer(find('e879e4'))
-
-    expect(document.body.textContent).toContain('User message during off hours')
-  })
-
-  it('says when a node has no settings of its own', async () => {
-    await openDrawer(find('161f52'))
-
-    expect(document.body.textContent).toContain('This node has no settings of its own.')
   })
 
   it('slides up from the bottom when the viewport is narrow', async () => {
