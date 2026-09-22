@@ -1,4 +1,6 @@
-const flow = [
+import type { FlowNode } from './flow.types'
+
+const flow: FlowNode[] = [
   {
     id: 1,
     parentId: -1,
@@ -90,6 +92,6 @@ const flow = [
   },
 ]
 
-export function GET() {
+export function GET(): Response {
   return Response.json(flow)
 }

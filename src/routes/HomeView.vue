@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { useQuery } from '@tanstack/vue-query'
+import type { FlowNode } from '../../api/flow.types'
 
 const { data, isPending, isError, error, refetch } = useQuery({
   queryKey: ['flow'],
-  queryFn: async ({ signal }): Promise<unknown> => {
+  queryFn: async ({ signal }): Promise<FlowNode[]> => {
     const response = await fetch('/api/flow', { signal })
     if (!response.ok) {
       throw new Error(`Unable to load flow (${response.status})`)
