@@ -1,1 +1,278 @@
 @import 'tailwindcss';
+@import '@vue-flow/core/dist/style.css';
+@import '@vue-flow/core/dist/theme-default.css';
+
+:root {
+  --app-header-height: 3.25rem;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    sans-serif;
+  color: #0f172a;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+}
+
+.vue-flow__node {
+  cursor: grab;
+}
+
+.vue-flow__node:active {
+  cursor: grabbing;
+}
+
+/* Overlays: Reka keeps elements mounted while their closed animation runs. */
+@keyframes app-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes app-overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.app-overlay[data-state='open'] {
+  animation: app-overlay-in 180ms ease-out;
+}
+
+.app-overlay[data-state='closed'] {
+  animation: app-overlay-out 150ms ease-in forwards;
+}
+
+/*
+ * Dialogs are bottom sheets on a phone and centred cards from `sm` up. Position and
+ * animation both live here and both use `translate`, because Tailwind's translate
+ * utilities set that property and a `transform` animation would stack on top of it.
+ */
+.app-sheet {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  max-height: 85dvh;
+  overflow-y: auto;
+  border-top-left-radius: 1rem;
+  border-top-right-radius: 1rem;
+}
+
+@keyframes app-sheet-in {
+  from {
+    opacity: 0;
+    translate: 0 100%;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes app-sheet-out {
+  from {
+    opacity: 1;
+    translate: 0 0;
+  }
+  to {
+    opacity: 0;
+    translate: 0 100%;
+  }
+}
+
+.app-sheet[data-state='open'] {
+  animation: app-sheet-in 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.app-sheet[data-state='closed'] {
+  animation: app-sheet-out 180ms ease-in forwards;
+}
+
+@keyframes app-sheet-zoom-in {
+  from {
+    opacity: 0;
+    translate: -50% -46%;
+    scale: 0.96;
+  }
+  to {
+    opacity: 1;
+    translate: -50% -50%;
+    scale: 1;
+  }
+}
+
+@keyframes app-sheet-zoom-out {
+  from {
+    opacity: 1;
+    translate: -50% -50%;
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    translate: -50% -48%;
+    scale: 0.98;
+  }
+}
+
+@media (min-width: 40rem) {
+  .app-sheet {
+    top: 50%;
+    right: auto;
+    bottom: auto;
+    left: 50%;
+    width: var(--app-sheet-width, min(28rem, calc(100vw - 2rem)));
+    max-height: min(85dvh, calc(100dvh - 4rem));
+    translate: -50% -50%;
+    border-radius: 1rem;
+  }
+
+  .app-sheet[data-state='open'] {
+    animation: app-sheet-zoom-in 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .app-sheet[data-state='closed'] {
+    animation: app-sheet-zoom-out 160ms ease-in forwards;
+  }
+}
+
+/* `scale` again, not `transform`: the popper's own position is a transform. */
+@keyframes app-popper-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+  to {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+@keyframes app-popper-out {
+  from {
+    opacity: 1;
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    scale: 0.98;
+  }
+}
+
+.app-popper[data-state='open'] {
+  animation: app-popper-in 140ms ease-out;
+}
+
+.app-popper[data-state='closed'] {
+  animation: app-popper-out 120ms ease-in forwards;
+}
+
+/* Switching nodes swaps the drawer's contents instead of closing it. */
+.drawer-content-enter-active {
+  transition:
+    opacity 180ms ease,
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.drawer-content-leave-active {
+  transition:
+    opacity 110ms ease,
+    transform 110ms ease;
+}
+
+.drawer-content-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+.drawer-content-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+/* Validation messages and list items, so nothing appears or reflows abruptly. */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-3px);
+}
+
+.list-enter-active {
+  transition:
+    opacity 200ms ease,
+    transform 200ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.list-enter-from {
+  opacity: 0;
+  transform: translateY(-6px);
+}
+
+.list-move {
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* The connectors draw themselves in once, so the flow reads as a path on load. */
+@keyframes flow-edge-draw {
+  from {
+    stroke-dashoffset: 1200;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.vue-flow__edge-path {
+  stroke-dasharray: 1200;
+  animation: flow-edge-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-vaul-drawer],
+  .drawer-content-enter-active,
+  .drawer-content-leave-active,
+  .fade-slide-enter-active,
+  .fade-slide-leave-active,
+  .list-enter-active,
+  .list-move,
+  .app-overlay,
+  .app-sheet,
+  .app-popper,
+  .vue-flow__edge-path {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .vue-flow__edge-path {
+    stroke-dasharray: none;
+  }
+}

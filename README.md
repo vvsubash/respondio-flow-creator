@@ -76,6 +76,15 @@ pnpm build
 pnpm test:unit
 ```
 
+Run tests once with coverage:
+
+```sh
+pnpm test:coverage
+```
+
+Coverage is printed in the terminal, with an HTML report at `coverage/index.html`
+and an LCOV report at `coverage/lcov.info`.
+
 ### Run End-to-End Tests with [Playwright](https://playwright.dev)
 
 ```sh

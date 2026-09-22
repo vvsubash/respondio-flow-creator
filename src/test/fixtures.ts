@@ -1,6 +1,6 @@
-import type { FlowNode } from './flow.types'
+import type { FlowNode } from '../../api/flow.types'
 
-const flow: FlowNode[] = [
+const SAMPLE = [
   {
     id: 1,
     parentId: -1,
@@ -90,8 +90,8 @@ const flow: FlowNode[] = [
       comment: 'User message during off hours',
     },
   },
-]
+] as FlowNode[]
 
-export function GET(): Response {
-  return Response.json(flow)
+export function sampleFlow(): FlowNode[] {
+  return JSON.parse(JSON.stringify(SAMPLE)) as FlowNode[]
 }
