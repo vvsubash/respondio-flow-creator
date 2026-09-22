@@ -27,3 +27,33 @@ export function childrenMap(nodes: FlowNode[]): Map<string, FlowNode[]> {
   }
   return map
 }
+
+export function canDeleteNode(node: FlowNode | undefined): boolean {
+  return Boolean(node) && node?.type !== 'trigger' && node?.type !== 'dateTimeConnector'
+}
+
+export function canBeParent(node: FlowNode, nodes: FlowNode[]): boolean {
+  return childrenOf(nodes, node.id).length === 0
+}
+
+export function validParents(nodes: FlowNode[]): FlowNode[] {
+  return nodes.filter((node) => canBeParent(node, nodes))
+}
+
+export function removeNode(nodes: FlowNode[], id: NodeId): FlowNode[] {
+  const target = findNode(nodes, id)
+  if (!target || !canDeleteNode(target)) return nodes
+
+  const removed = new Set<string>([nodeKey(target.id)])
+  if (target.type === 'dateTime') {
+    for (const child of childrenOf(nodes, target.id)) {
+      if (child.type === 'dateTimeConnector') removed.add(nodeKey(child.id))
+    }
+  }
+
+  return nodes
+    .filter((node) => !removed.has(nodeKey(node.id)))
+    .map((node) =>
+      removed.has(nodeKey(node.parentId)) ? { ...node, parentId: target.parentId } : node,
+    )
+}
