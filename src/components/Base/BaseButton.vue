@@ -3,7 +3,7 @@ import { computed } from 'vue'
 
 const props = withDefaults(
   defineProps<{
-    variant?: 'primary' | 'secondary' | 'ghost'
+    variant?: 'primary' | 'secondary' | 'danger' | 'danger-solid' | 'ghost' | 'ghost-danger'
     size?: 'sm' | 'md'
     type?: 'button' | 'submit'
     disabled?: boolean
@@ -17,7 +17,11 @@ const VARIANTS: Record<NonNullable<typeof props.variant>, string> = {
   primary: 'bg-indigo-600 text-white hover:bg-indigo-500 focus-visible:outline-indigo-600',
   secondary:
     'border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 focus-visible:outline-slate-400',
+  danger:
+    'border border-red-200 bg-white text-red-600 hover:bg-red-50 focus-visible:outline-red-500',
+  'danger-solid': 'bg-red-600 text-white hover:bg-red-500 focus-visible:outline-red-600',
   ghost: 'text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus-visible:outline-slate-400',
+  'ghost-danger': 'text-slate-400 hover:bg-red-50 hover:text-red-600 focus-visible:outline-red-500',
 }
 
 const SIZES: Record<NonNullable<typeof props.size>, string> = {
