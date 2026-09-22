@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test'
 
-// See here how to get started:
-// https://playwright.dev/docs/intro
-test('visits the app root url', async ({ page }) => {
+test('displays the flow API response as JSON', async ({ page }) => {
+  const responsePromise = page.waitForResponse('/api/flow')
   await page.goto('/')
-  await expect(page.locator('h1')).toHaveText('You did it!')
+  const response = await responsePromise
+  expect(response.ok()).toBe(true)
+  await expect(page.locator('h1')).toHaveText('Flow')
+  await expect(page.locator('pre code')).toHaveText(JSON.stringify(await response.json(), null, 2))
 })
