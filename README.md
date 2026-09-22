@@ -7,7 +7,7 @@ This template should help get you started developing with Vue 3 in Vite.
 Push changes to `dev`, then open a pull request with base `main` and compare `dev`.
 CI runs on pushes to `dev` and `main`, and on pull requests targeting either branch.
 The `CI checks` job runs lint without fixing files, unit tests, type checking, a
-production build, and Playwright tests in Chromium, Firefox, and WebKit.
+production build, and Playwright tests in Chromium.
 The push run provides feedback before opening a PR; the PR run tests the proposed merge.
 
 The workflow alone does not prevent direct pushes. A repository administrator must
