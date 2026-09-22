@@ -26,13 +26,13 @@ describe('NodeDrawer', () => {
     expect(document.body.textContent).toContain('Sends texts and attachments to the contact.')
   })
 
-  it('lists every opening hour for a business hours node', async () => {
+  it('edits a business hours node a day at a time', async () => {
     await openDrawer(find('d09c08'))
 
-    expect(document.body.textContent).toContain('UTC')
+    const times = document.body.querySelectorAll('input[type="time"]')
+    expect(times).toHaveLength(14)
     expect(document.body.textContent).toContain('Monday')
-    expect(document.body.textContent).toContain('Sunday')
-    expect(document.body.textContent).toContain('09:00 – 17:00')
+    expect((times[0] as HTMLInputElement).value).toBe('09:00')
   })
 
   it('slides up from the bottom when the viewport is narrow', async () => {

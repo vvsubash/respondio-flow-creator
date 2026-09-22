@@ -8,7 +8,10 @@ import { truncate } from '@/utils/text'
 defineOptions({ inheritAttrs: false })
 
 const props = defineProps<{ id: string; data: { node: FlowNode }; selected?: boolean }>()
-const emit = defineEmits<{ open: [id: string] }>()
+const emit = defineEmits<{
+  open: [id: string]
+  navigate: [id: string, direction: 'up' | 'down' | 'left' | 'right']
+}>()
 
 const CHIP = {
   pink: 'bg-pink-50 text-pink-600',
@@ -59,6 +62,10 @@ const summary = computed(() => truncate(nodeSummary(node.value), 90))
     @click="onClick"
     @keydown.enter.prevent="emit('open', id)"
     @keydown.space.prevent="emit('open', id)"
+    @keydown.up.prevent="emit('navigate', id, 'up')"
+    @keydown.down.prevent="emit('navigate', id, 'down')"
+    @keydown.left.prevent="emit('navigate', id, 'left')"
+    @keydown.right.prevent="emit('navigate', id, 'right')"
   >
     <div class="flex items-center gap-2">
       <span

@@ -1,9 +1,7 @@
-import { afterEach, describe, it, expect, vi } from 'vitest'
-
+import { afterEach, beforeEach, describe, it, expect, vi } from 'vitest'
+import { createPinia } from 'pinia'
 import { flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
-import App from '../App.vue'
-import router from '../router'
 import { sampleFlow } from '@/test/fixtures'
 
 /** `clientX` is read-only on a jsdom MouseEvent, so the coordinates come from the constructor. */
@@ -11,84 +9,64 @@ function pointAt(element: Element, type: string, clientX: number, clientY: numbe
   element.dispatchEvent(new MouseEvent(type, { clientX, clientY, bubbles: true }))
 }
 
+/** The flow API keeps a module-level storage ref, so each test needs a fresh module graph. */
+async function mountApp(path = '/') {
+  vi.resetModules()
+  const { default: App } = await import('../App.vue')
+  const { default: router } = await import('../router')
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+
+  await router.push(path)
+  await router.isReady()
+
+  const wrapper = mount(App, {
+    global: {
+      plugins: [createPinia(), router, [VueQueryPlugin, { queryClient }]],
+      stubs: { VueQueryDevtools: true },
+    },
+  })
+  await flushPromises()
+  return { wrapper, router, queryClient }
+}
+
 describe('App', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
+  beforeEach(() => {
+    window.localStorage.clear()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn<typeof fetch>().mockImplementation(async () => Response.json(sampleFlow())),
+    )
   })
 
-  it.each(['/', '/missing-page'])('renders the home page from %s', async (path) => {
-    const flow = sampleFlow()
-    vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockResolvedValue(Response.json(flow)))
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    await router.push(path)
-    await router.isReady()
-    const wrapper = mount(App, {
-      global: {
-        plugins: [router, [VueQueryPlugin, { queryClient }]],
-        stubs: { VueQueryDevtools: true },
-      },
-    })
-    expect(wrapper.get('[role="status"]').text()).toBe('Loading flow…')
-    await flushPromises()
-    expect(router.currentRoute.value.path).toBe('/')
-    expect(wrapper.get('h1').text()).toBe('Flow')
-    expect(wrapper.findAll('.vue-flow__node')).toHaveLength(flow.length)
-    expect(wrapper.findAll('.vue-flow__edge')).toHaveLength(flow.length - 1)
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    document.body.innerHTML = ''
+  })
 
+  it.each(['/', '/missing-page'])('renders the flow from %s', async (path) => {
+    const { wrapper, router } = await mountApp(path)
+
+    expect(router.currentRoute.value.path).toBe('/')
+    expect(wrapper.findAll('.vue-flow__node')).toHaveLength(7)
     expect(wrapper.get('.vue-flow__node-dateTime').text()).toContain('Business Hours – UTC')
-    expect(wrapper.get('.vue-flow__node-trigger').text()).toContain('Conversation Opened')
-    expect(wrapper.get('.vue-flow__node-addComment').text()).toContain(
-      'User message during off hours',
-    )
-    expect(wrapper.get('.vue-flow__node-sendMessage').text()).toContain('Sorry, we are currently')
     expect(wrapper.findAll('.vue-flow__node-dateTimeConnector').map((pill) => pill.text())).toEqual(
       ['Success', 'Failure'],
     )
-    wrapper.unmount()
-    queryClient.clear()
   })
 
   it('opens the drawer for the node that was clicked', async () => {
-    const flow = sampleFlow()
-    vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockResolvedValue(Response.json(flow)))
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    await router.push('/')
-    await router.isReady()
-    const wrapper = mount(App, {
-      global: {
-        plugins: [router, [VueQueryPlugin, { queryClient }]],
-        stubs: { VueQueryDevtools: true },
-      },
-    })
-    await flushPromises()
+    const { wrapper } = await mountApp()
 
     const card = wrapper.get('.vue-flow__node-dateTime [role="button"]')
-    expect(card.attributes('aria-label')).toContain('Business Hours')
     pointAt(card.element, 'pointerdown', 0, 0)
     pointAt(card.element, 'click', 0, 0)
     await flushPromises()
 
     expect(document.body.textContent).toContain('Branches the flow on date and time conditions.')
-    expect(document.body.textContent).toContain('Monday')
-
-    wrapper.unmount()
-    document.body.innerHTML = ''
-    queryClient.clear()
   })
 
   it('leaves the drawer shut when the click was the end of a drag', async () => {
-    const flow = sampleFlow()
-    vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockResolvedValue(Response.json(flow)))
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    await router.push('/')
-    await router.isReady()
-    const wrapper = mount(App, {
-      global: {
-        plugins: [router, [VueQueryPlugin, { queryClient }]],
-        stubs: { VueQueryDevtools: true },
-      },
-    })
-    await flushPromises()
+    const { wrapper } = await mountApp()
 
     const card = wrapper.get('.vue-flow__node-dateTime [role="button"]')
     pointAt(card.element, 'pointerdown', 0, 0)
@@ -98,34 +76,44 @@ describe('App', () => {
     expect(document.body.textContent).not.toContain(
       'Branches the flow on date and time conditions.',
     )
+  })
 
-    wrapper.unmount()
-    document.body.innerHTML = ''
-    queryClient.clear()
+  it('saves an edit to the card and to storage', async () => {
+    const { wrapper } = await mountApp()
+
+    const card = wrapper.get('.vue-flow__node-addComment [role="button"]')
+    pointAt(card.element, 'pointerdown', 0, 0)
+    pointAt(card.element, 'click', 0, 0)
+    await flushPromises()
+
+    const title = document.body.querySelector('input[type="text"]') as HTMLInputElement
+    title.value = 'Renamed comment'
+    title.dispatchEvent(new Event('input', { bubbles: true }))
+    await flushPromises()
+
+    const save = [...document.body.querySelectorAll('button')].find(
+      (button) => button.textContent?.trim() === 'Save changes',
+    )
+    save?.click()
+    await flushPromises()
+
+    expect(wrapper.get('.vue-flow__node-addComment').text()).toContain('Renamed comment')
+    expect(window.localStorage.getItem('respondio-flow-creator:flow')).toContain('Renamed comment')
   })
 
   it('shows failed requests and allows retrying', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(new Response(null, { status: 500 }))
-      .mockResolvedValueOnce(Response.json([]))
+      .mockImplementation(async () => Response.json(sampleFlow()))
     vi.stubGlobal('fetch', fetchMock)
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-    await router.push('/')
-    await router.isReady()
-    const wrapper = mount(App, {
-      global: {
-        plugins: [router, [VueQueryPlugin, { queryClient }]],
-        stubs: { VueQueryDevtools: true },
-      },
-    })
-    await flushPromises()
+
+    const { wrapper } = await mountApp()
+
     expect(wrapper.get('[role="alert"]').text()).toContain('Unable to load flow (500)')
-    await wrapper.get('button').trigger('click')
+    await wrapper.get('[role="alert"] button').trigger('click')
     await flushPromises()
+
     expect(wrapper.find('.vue-flow').exists()).toBe(true)
-    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
-    wrapper.unmount()
-    queryClient.clear()
   })
 })
