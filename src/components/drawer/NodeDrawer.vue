@@ -166,7 +166,7 @@ defineExpose({ requestClose: close })
   >
     <DrawerPortal>
       <DrawerContent
-        class="fixed inset-x-0 bottom-0 z-30 flex h-[85dvh] flex-col rounded-t-2xl border-t border-slate-200 bg-white shadow-xl focus:outline-none sm:inset-x-auto sm:inset-y-0 sm:right-0 sm:h-auto sm:w-[26rem] sm:rounded-none sm:border-t-0 sm:border-l"
+        class="fixed inset-x-0 bottom-0 z-30 flex h-[85dvh] flex-col rounded-t-2xl border-t border-slate-200 bg-white shadow-xl focus:outline-none sm:inset-x-auto sm:top-(--app-header-height) sm:right-0 sm:h-auto sm:w-[26rem] sm:rounded-none sm:border-t-0 sm:border-l"
         @interact-outside.prevent
       >
         <template v-if="draft">

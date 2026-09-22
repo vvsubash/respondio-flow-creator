@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Plus, Redo2, RefreshCw, Undo2 } from 'lucide-vue-next'
 import { computed, ref, useTemplateRef } from 'vue'
-import { useEventListener } from '@vueuse/core'
+import { useEventListener, useResizeObserver } from '@vueuse/core'
 import { ToolbarButton, ToolbarRoot, ToolbarSeparator } from 'reka-ui'
 import BaseButton from '@/components/Base/BaseButton.vue'
 import CreateNodeModal from '@/components/CreateNodeModal.vue'
@@ -28,11 +28,20 @@ const {
 const canvas = useCanvasStore()
 
 const showCreate = ref(false)
+const header = useTemplateRef<HTMLElement>('header')
 const drawer = useTemplateRef<InstanceType<typeof NodeDrawer>>('drawer')
 
 const selectedNode = computed(() => {
   const node = canvas.selectedId ? findNode(nodes.value, canvas.selectedId) : undefined
   return isEditableNode(node) ? node : undefined
+})
+
+/** The drawer sits under the header, so it needs to know how tall the header is. */
+useResizeObserver(header, ([entry]) => {
+  document.documentElement.style.setProperty(
+    '--app-header-height',
+    `${entry?.target.clientHeight ?? 0}px`,
+  )
 })
 
 /** Undo and redo from the keyboard, unless the user is editing text. */
@@ -73,6 +82,7 @@ async function remove(node: FlowNode) {
 <template>
   <div class="flex h-full flex-col bg-slate-50">
     <header
+      ref="header"
       class="relative z-40 flex flex-wrap items-center gap-3 border-b border-slate-200 bg-white px-5 py-3"
     >
       <h1 class="text-base font-semibold text-slate-900">Flow</h1>
