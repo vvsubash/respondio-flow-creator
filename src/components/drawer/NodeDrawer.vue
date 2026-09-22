@@ -16,7 +16,7 @@ import SendMessageDetails from './SendMessageDetails.vue'
 import AddCommentDetails from './AddCommentDetails.vue'
 import BusinessHoursDetails from './BusinessHoursDetails.vue'
 import type { FlowNode } from '../../../api/flow.types'
-import { useMediaQuery } from '@/composables/useMediaQuery'
+import { useMediaQuery } from '@vueuse/core'
 import { NODE_META, nodeTitle } from '@/utils/nodeMeta'
 import { nodeKey } from '@/utils/graph'
 
