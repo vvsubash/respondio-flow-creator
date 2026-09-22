@@ -4,6 +4,7 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { QueryClient, VueQueryPlugin } from '@tanstack/vue-query'
 import App from '../App.vue'
 import router from '../router'
+import { sampleFlow } from '@/test/fixtures'
 
 describe('App', () => {
   afterEach(() => {
@@ -11,10 +12,7 @@ describe('App', () => {
   })
 
   it.each(['/', '/missing-page'])('renders the home page from %s', async (path) => {
-    const flow = [
-      { id: 1, parentId: -1, type: 'trigger' },
-      { id: 2, parentId: 1, name: 'Business Hours', type: 'dateTime' },
-    ]
+    const flow = sampleFlow()
     vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockResolvedValue(Response.json(flow)))
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     await router.push(path)
@@ -29,11 +27,18 @@ describe('App', () => {
     await flushPromises()
     expect(router.currentRoute.value.path).toBe('/')
     expect(wrapper.get('h1').text()).toBe('Flow')
-    expect(wrapper.findAll('.vue-flow__node').map((node) => node.text())).toEqual([
-      'trigger',
-      'Business Hours',
-    ])
-    expect(wrapper.findAll('.vue-flow__edge')).toHaveLength(1)
+    expect(wrapper.findAll('.vue-flow__node')).toHaveLength(flow.length)
+    expect(wrapper.findAll('.vue-flow__edge')).toHaveLength(flow.length - 1)
+
+    expect(wrapper.get('.vue-flow__node-dateTime').text()).toContain('Business Hours – UTC')
+    expect(wrapper.get('.vue-flow__node-trigger').text()).toContain('Conversation Opened')
+    expect(wrapper.get('.vue-flow__node-addComment').text()).toContain(
+      'User message during off hours',
+    )
+    expect(wrapper.get('.vue-flow__node-sendMessage').text()).toContain('Sorry, we are currently')
+    expect(wrapper.findAll('.vue-flow__node-dateTimeConnector').map((pill) => pill.text())).toEqual(
+      ['Success', 'Failure'],
+    )
     wrapper.unmount()
     queryClient.clear()
   })

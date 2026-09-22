@@ -4,7 +4,11 @@ import type { FlowNode } from '../../api/flow.types'
 import { VueFlow } from '@vue-flow/core'
 import { computed } from 'vue'
 import { findNode, nodeKey } from '@/utils/graph'
+import { layoutTree, positionOf, sizeOf } from '@/utils/layout'
+import { NODE_META } from '@/utils/nodeMeta'
 import { Background } from '@vue-flow/background'
+import FlowNodeCard from '@/components/canvas/FlowNodeCard.vue'
+import ConnectorPill from '@/components/canvas/ConnectorPill.vue'
 
 const { data, isPending, isError, error, refetch } = useQuery({
   queryKey: ['flow'],
@@ -17,25 +21,18 @@ const { data, isPending, isError, error, refetch } = useQuery({
   },
 })
 const flow = computed(() => data.value ?? [])
-const depthOf = (node: FlowNode): number => {
-  let depth = 0
-  let parent = findNode(flow.value, node.parentId)
-  while (parent) {
-    depth += 1
-    parent = findNode(flow.value, parent.parentId)
-  }
-  return depth
-}
+
 const nodes = computed(() => {
-  const filled = new Map<number, number>()
+  const positions = layoutTree(flow.value)
   return flow.value.map((node) => {
-    const depth = depthOf(node)
-    const column = filled.get(depth) ?? 0
-    filled.set(depth, column + 1)
+    const { width, height } = sizeOf(node)
     return {
       id: nodeKey(node.id),
-      position: { x: column * 300, y: depth * 140 },
-      label: node.name ?? node.type,
+      type: node.type,
+      position: positionOf(positions, node.id),
+      data: { node },
+      style: { width: `${width}px`, height: `${height}px` },
+      connectable: false,
     }
   })
 })
@@ -44,9 +41,11 @@ const edges = computed(() =>
   flow.value
     .filter((node) => findNode(flow.value, node.parentId))
     .map((node) => ({
-      id: `${nodeKey(node.parentId)}-${nodeKey(node.id)}`,
+      id: `e-${nodeKey(node.parentId)}-${nodeKey(node.id)}`,
       source: nodeKey(node.parentId),
       target: nodeKey(node.id),
+      type: 'smoothstep',
+      style: { stroke: NODE_META[node.type].color, strokeWidth: 2 },
     })),
 )
 </script>
@@ -62,8 +61,31 @@ const edges = computed(() =>
       </button>
     </div>
     <div v-else class="min-h-0 flex-1 overflow-hidden rounded-lg border border-slate-200">
-      <VueFlow :nodes :edges fit-view-on-init>
-        <Background />
+      <VueFlow
+        :nodes
+        :edges
+        :min-zoom="0.25"
+        :max-zoom="1.75"
+        :nodes-connectable="false"
+        fit-view-on-init
+        class="h-full w-full"
+      >
+        <Background pattern-color="#cbd5e1" :gap="22" :size="1.4" />
+        <template #node-trigger="props">
+          <FlowNodeCard v-bind="props" />
+        </template>
+        <template #node-sendMessage="props">
+          <FlowNodeCard v-bind="props" />
+        </template>
+        <template #node-addComment="props">
+          <FlowNodeCard v-bind="props" />
+        </template>
+        <template #node-dateTime="props">
+          <FlowNodeCard v-bind="props" />
+        </template>
+        <template #node-dateTimeConnector="props">
+          <ConnectorPill v-bind="props" />
+        </template>
       </VueFlow>
     </div>
   </main>
