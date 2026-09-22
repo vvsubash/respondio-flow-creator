@@ -57,3 +57,45 @@ export function removeNode(nodes: FlowNode[], id: NodeId): FlowNode[] {
       removed.has(nodeKey(node.parentId)) ? { ...node, parentId: target.parentId } : node,
     )
 }
+
+export type NavigationDirection = 'up' | 'down' | 'left' | 'right'
+
+/** Children of a node, with display-only connectors replaced by their own children. */
+export function focusableChildren(nodes: FlowNode[], id: NodeId): FlowNode[] {
+  return childrenOf(nodes, id).flatMap((child) =>
+    child.type === 'dateTimeConnector' ? childrenOf(nodes, child.id) : [child],
+  )
+}
+
+/** Nearest ancestor a user can focus, skipping display-only connectors. */
+export function focusableParent(nodes: FlowNode[], id: NodeId): FlowNode | undefined {
+  let parent = findNode(nodes, findNode(nodes, id)?.parentId ?? '')
+  while (parent?.type === 'dateTimeConnector') {
+    parent = findNode(nodes, parent.parentId)
+  }
+  return parent
+}
+
+export function navigateFrom(
+  nodes: FlowNode[],
+  id: NodeId,
+  direction: NavigationDirection,
+): string | undefined {
+  if (direction === 'down') {
+    const [firstChild] = focusableChildren(nodes, id)
+    return firstChild && nodeKey(firstChild.id)
+  }
+
+  const parent = focusableParent(nodes, id)
+  if (direction === 'up') return parent && nodeKey(parent.id)
+  if (!parent) return undefined
+
+  const siblings = focusableChildren(nodes, parent.id)
+  const index = siblings.findIndex((sibling) => nodeKey(sibling.id) === nodeKey(id))
+  const next = siblings[index + (direction === 'right' ? 1 : -1)]
+  return next && nodeKey(next.id)
+}
+
+export function isEditableNode(node: FlowNode | undefined): node is FlowNode {
+  return Boolean(node) && node?.type !== 'dateTimeConnector'
+}
