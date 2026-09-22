@@ -6,6 +6,11 @@ import App from '../App.vue'
 import router from '../router'
 import { sampleFlow } from '@/test/fixtures'
 
+/** `clientX` is read-only on a jsdom MouseEvent, so the coordinates come from the constructor. */
+function pointAt(element: Element, type: string, clientX: number, clientY: number) {
+  element.dispatchEvent(new MouseEvent(type, { clientX, clientY, bubbles: true }))
+}
+
 describe('App', () => {
   afterEach(() => {
     vi.unstubAllGlobals()
@@ -40,6 +45,62 @@ describe('App', () => {
       ['Success', 'Failure'],
     )
     wrapper.unmount()
+    queryClient.clear()
+  })
+
+  it('opens the drawer for the node that was clicked', async () => {
+    const flow = sampleFlow()
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockResolvedValue(Response.json(flow)))
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    await router.push('/')
+    await router.isReady()
+    const wrapper = mount(App, {
+      global: {
+        plugins: [router, [VueQueryPlugin, { queryClient }]],
+        stubs: { VueQueryDevtools: true },
+      },
+    })
+    await flushPromises()
+
+    const card = wrapper.get('.vue-flow__node-dateTime [role="button"]')
+    expect(card.attributes('aria-label')).toContain('Business Hours')
+    pointAt(card.element, 'pointerdown', 0, 0)
+    pointAt(card.element, 'click', 0, 0)
+    await flushPromises()
+
+    expect(document.body.textContent).toContain('Branches the flow on date and time conditions.')
+    expect(document.body.textContent).toContain('Monday')
+
+    wrapper.unmount()
+    document.body.innerHTML = ''
+    queryClient.clear()
+  })
+
+  it('leaves the drawer shut when the click was the end of a drag', async () => {
+    const flow = sampleFlow()
+    vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockResolvedValue(Response.json(flow)))
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    await router.push('/')
+    await router.isReady()
+    const wrapper = mount(App, {
+      global: {
+        plugins: [router, [VueQueryPlugin, { queryClient }]],
+        stubs: { VueQueryDevtools: true },
+      },
+    })
+    await flushPromises()
+
+    const card = wrapper.get('.vue-flow__node-dateTime [role="button"]')
+    pointAt(card.element, 'pointerdown', 0, 0)
+    pointAt(card.element, 'click', 40, 12)
+    await flushPromises()
+
+    expect(document.body.textContent).not.toContain(
+      'Branches the flow on date and time conditions.',
+    )
+
+    wrapper.unmount()
+    document.body.innerHTML = ''
     queryClient.clear()
   })
 

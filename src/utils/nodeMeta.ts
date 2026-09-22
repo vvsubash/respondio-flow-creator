@@ -8,14 +8,45 @@ export interface NodeMeta {
   icon: Component
   accent: 'pink' | 'violet' | 'teal' | 'amber' | 'sky'
   color: string
+  hint: string
 }
 
 export const NODE_META: Record<NodeType, NodeMeta> = {
-  trigger: { label: 'Trigger', icon: Zap, accent: 'pink', color: '#ec4899' },
-  sendMessage: { label: 'Send Message', icon: Send, accent: 'violet', color: '#7c3aed' },
-  addComment: { label: 'Add Comment', icon: MessageSquare, accent: 'teal', color: '#0d9488' },
-  dateTime: { label: 'Business Hours', icon: Calendar, accent: 'amber', color: '#f59e0b' },
-  dateTimeConnector: { label: 'Branch', icon: GitBranch, accent: 'sky', color: '#0ea5e9' },
+  trigger: {
+    label: 'Trigger',
+    icon: Zap,
+    accent: 'pink',
+    color: '#ec4899',
+    hint: 'Starts the flow when the matching event happens.',
+  },
+  sendMessage: {
+    label: 'Send Message',
+    icon: Send,
+    accent: 'violet',
+    color: '#7c3aed',
+    hint: 'Sends texts and attachments to the contact.',
+  },
+  addComment: {
+    label: 'Add Comment',
+    icon: MessageSquare,
+    accent: 'teal',
+    color: '#0d9488',
+    hint: 'Leaves an internal note on the conversation.',
+  },
+  dateTime: {
+    label: 'Business Hours',
+    icon: Calendar,
+    accent: 'amber',
+    color: '#f59e0b',
+    hint: 'Branches the flow on date and time conditions.',
+  },
+  dateTimeConnector: {
+    label: 'Branch',
+    icon: GitBranch,
+    accent: 'sky',
+    color: '#0ea5e9',
+    hint: 'Outcome of the preceding condition.',
+  },
 }
 
 function humanize(value: string): string {

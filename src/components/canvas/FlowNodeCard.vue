@@ -7,7 +7,8 @@ import { truncate } from '@/utils/text'
 
 defineOptions({ inheritAttrs: false })
 
-const props = defineProps<{ data: { node: FlowNode } }>()
+const props = defineProps<{ id: string; data: { node: FlowNode }; selected?: boolean }>()
+const emit = defineEmits<{ open: [id: string] }>()
 
 const CHIP = {
   pink: 'bg-pink-50 text-pink-600',
@@ -15,6 +16,29 @@ const CHIP = {
   teal: 'bg-teal-50 text-teal-600',
   amber: 'bg-amber-50 text-amber-600',
   sky: 'bg-sky-50 text-sky-600',
+}
+
+const OUTLINE = {
+  pink: 'border-pink-400 shadow-pink-100',
+  violet: 'border-violet-400 shadow-violet-100',
+  teal: 'border-teal-400 shadow-teal-100',
+  amber: 'border-amber-400 shadow-amber-100',
+  sky: 'border-sky-400 shadow-sky-100',
+}
+
+const DRAG_THRESHOLD = 4
+let pointerStart: { x: number; y: number } | null = null
+
+function onPointerDown(event: PointerEvent) {
+  pointerStart = { x: event.clientX, y: event.clientY }
+}
+
+/** A drag that ends on the card still fires a click — only a real click opens the drawer. */
+function onClick(event: MouseEvent) {
+  const start = pointerStart
+  pointerStart = null
+  if (start && Math.hypot(event.clientX - start.x, event.clientY - start.y) > DRAG_THRESHOLD) return
+  emit('open', props.id)
 }
 
 const node = computed(() => props.data.node)
@@ -25,7 +49,16 @@ const summary = computed(() => truncate(nodeSummary(node.value), 90))
 
 <template>
   <div
-    class="h-full w-full rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-left shadow-sm"
+    :data-node-id="id"
+    role="button"
+    tabindex="0"
+    :aria-label="`${meta.label}: ${title}. Press enter to open details.`"
+    class="h-full w-full cursor-pointer rounded-xl border bg-white px-3.5 py-3 text-left shadow-sm transition-[box-shadow,border-color] duration-150 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+    :class="selected ? `${OUTLINE[meta.accent]} shadow-md` : 'border-slate-200'"
+    @pointerdown="onPointerDown"
+    @click="onClick"
+    @keydown.enter.prevent="emit('open', id)"
+    @keydown.space.prevent="emit('open', id)"
   >
     <div class="flex items-center gap-2">
       <span

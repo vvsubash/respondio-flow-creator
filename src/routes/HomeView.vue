@@ -2,13 +2,14 @@
 import { useQuery } from '@tanstack/vue-query'
 import type { FlowNode } from '../../api/flow.types'
 import { VueFlow } from '@vue-flow/core'
-import { computed } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 import { findNode, nodeKey } from '@/utils/graph'
 import { layoutTree, positionOf, sizeOf } from '@/utils/layout'
 import { NODE_META } from '@/utils/nodeMeta'
 import { Background } from '@vue-flow/background'
 import FlowNodeCard from '@/components/canvas/FlowNodeCard.vue'
 import ConnectorPill from '@/components/canvas/ConnectorPill.vue'
+import NodeDrawer from '@/components/drawer/NodeDrawer.vue'
 
 const { data, isPending, isError, error, refetch } = useQuery({
   queryKey: ['flow'],
@@ -22,6 +23,21 @@ const { data, isPending, isError, error, refetch } = useQuery({
 })
 const flow = computed(() => data.value ?? [])
 
+const selectedId = ref<string | null>(null)
+const drawer = useTemplateRef<InstanceType<typeof NodeDrawer>>('drawer')
+const selectedNode = computed(() =>
+  selectedId.value ? findNode(flow.value, selectedId.value) : undefined,
+)
+
+/** Clicking the node whose details are open closes them again. */
+function openNode(id: string) {
+  if (selectedId.value === id) {
+    drawer.value?.requestClose()
+    return
+  }
+  selectedId.value = id
+}
+
 const nodes = computed(() => {
   const positions = layoutTree(flow.value)
   return flow.value.map((node) => {
@@ -33,6 +49,7 @@ const nodes = computed(() => {
       data: { node },
       style: { width: `${width}px`, height: `${height}px` },
       connectable: false,
+      selected: selectedId.value === nodeKey(node.id),
     }
   })
 })
@@ -72,21 +89,22 @@ const edges = computed(() =>
       >
         <Background pattern-color="#cbd5e1" :gap="22" :size="1.4" />
         <template #node-trigger="props">
-          <FlowNodeCard v-bind="props" />
+          <FlowNodeCard v-bind="props" @open="openNode" />
         </template>
         <template #node-sendMessage="props">
-          <FlowNodeCard v-bind="props" />
+          <FlowNodeCard v-bind="props" @open="openNode" />
         </template>
         <template #node-addComment="props">
-          <FlowNodeCard v-bind="props" />
+          <FlowNodeCard v-bind="props" @open="openNode" />
         </template>
         <template #node-dateTime="props">
-          <FlowNodeCard v-bind="props" />
+          <FlowNodeCard v-bind="props" @open="openNode" />
         </template>
         <template #node-dateTimeConnector="props">
           <ConnectorPill v-bind="props" />
         </template>
       </VueFlow>
     </div>
+    <NodeDrawer v-if="selectedNode" ref="drawer" :node="selectedNode" @close="selectedId = null" />
   </main>
 </template>
