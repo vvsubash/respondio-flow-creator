@@ -11,7 +11,10 @@ describe('App', () => {
   })
 
   it.each(['/', '/missing-page'])('renders the home page from %s', async (path) => {
-    const flow = [{ id: 1, type: 'trigger' }]
+    const flow = [
+      { id: 1, parentId: -1, type: 'trigger' },
+      { id: 2, parentId: 1, name: 'Business Hours', type: 'dateTime' },
+    ]
     vi.stubGlobal('fetch', vi.fn<typeof fetch>().mockResolvedValue(Response.json(flow)))
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     await router.push(path)
@@ -26,13 +29,18 @@ describe('App', () => {
     await flushPromises()
     expect(router.currentRoute.value.path).toBe('/')
     expect(wrapper.get('h1').text()).toBe('Flow')
-    expect(wrapper.get('code').text()).toBe(JSON.stringify(flow, null, 2))
+    expect(wrapper.findAll('.vue-flow__node').map((node) => node.text())).toEqual([
+      'trigger',
+      'Business Hours',
+    ])
+    expect(wrapper.findAll('.vue-flow__edge')).toHaveLength(1)
     wrapper.unmount()
     queryClient.clear()
   })
 
   it('shows failed requests and allows retrying', async () => {
-    const fetchMock = vi.fn<typeof fetch>()
+    const fetchMock = vi
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(new Response(null, { status: 500 }))
       .mockResolvedValueOnce(Response.json([]))
     vi.stubGlobal('fetch', fetchMock)
@@ -49,7 +57,7 @@ describe('App', () => {
     expect(wrapper.get('[role="alert"]').text()).toContain('Unable to load flow (500)')
     await wrapper.get('button').trigger('click')
     await flushPromises()
-    expect(wrapper.get('code').text()).toBe('[]')
+    expect(wrapper.find('.vue-flow').exists()).toBe(true)
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
     wrapper.unmount()
     queryClient.clear()

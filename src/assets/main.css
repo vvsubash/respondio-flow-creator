@@ -1,1 +1,62 @@
 @import 'tailwindcss';
+@import '@vue-flow/core/dist/style.css';
+@import '@vue-flow/core/dist/theme-default.css';
+
+:root {
+  --app-header-height: 3.25rem;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family:
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    'Helvetica Neue',
+    sans-serif;
+  color: #0f172a;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+}
+
+.vue-flow__node {
+  cursor: grab;
+}
+
+.vue-flow__node:active {
+  cursor: grabbing;
+}
+
+/* The connectors draw themselves in once, so the flow reads as a path on load. */
+@keyframes flow-edge-draw {
+  from {
+    stroke-dashoffset: 1200;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.vue-flow__edge-path {
+  stroke-dasharray: 1200;
+  animation: flow-edge-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vue-flow__edge-path {
+    transition: none !important;
+    animation: none !important;
+    stroke-dasharray: none;
+  }
+}
