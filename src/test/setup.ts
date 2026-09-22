@@ -5,3 +5,20 @@ globalThis.ResizeObserver = class {
   unobserve() {}
   disconnect() {}
 }
+
+// This jsdom build exposes no Storage either, and the flow persists to it.
+if (!window.localStorage) {
+  const store = new Map<string, string>()
+  const localStorage: Storage = {
+    get length() {
+      return store.size
+    },
+    key: (index: number) => [...store.keys()][index] ?? null,
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => void store.set(key, String(value)),
+    removeItem: (key: string) => void store.delete(key),
+    clear: () => store.clear(),
+  }
+  Object.defineProperty(window, 'localStorage', { value: localStorage, configurable: true })
+  Object.defineProperty(globalThis, 'localStorage', { value: localStorage, configurable: true })
+}
